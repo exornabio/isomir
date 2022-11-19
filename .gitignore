@@ -1,0 +1,9 @@
+.vscode
+img/*.drawio
+script/isomir
+src/*.o
+src/isomir
+wdl/cromwell-executions
+wdl/cromwell-workflow-logs
+
+
