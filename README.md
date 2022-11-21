@@ -72,15 +72,49 @@ The algorithm was borrowed from QuagmiR <https://github.com/Gu-Lab-RBL-NCI/Quagm
     └── main.wdl
 ```
 
-* script: all the R scripts and executable binary
-* src: C++ source code implemented to find isomiRs
-* wdl
+### script: all the R scripts and executable binary
+
+### src: C++ source code implemented to find isomiRs
+
+### wdl
   - inputs.json
   - main.wdl
-* test
-* data
-  The example analysis directory.
 
+### data  
+The example analysis directory.
+  
+#### isoform.sam
+Sequence Alignment Map (SAM) format file of reads located on pre-miRNA.
+
+```
+read4868	0	hsa-mir-151a	11	30	22M	*	0	0	TCGAGGAGCTCACAGTCTAGTA	*	RN:i:75	DT:i:1
+read4867	0	hsa-mir-151a	11	30	21M	*	0	0	TCGAGGAGCTCACAGTCTAGT	*	RN:i:64	DT:i:0
+read4869	0	hsa-mir-151a	11	30	23M	*	0	0	TCGAGGAGCTCACAGTCTAGTAA	*	RN:i:14	DT:i:2
+```
+
+In the SAM format, each alignment line represents the alignment of a short reads. 
+Each line consists of 11 or more TAB-separated columns. 
+For more details see <https://samtools.github.io/hts-specs/SAMv1.pdf>. 
+Here we just list some import columns in this case.
+  - Col. 1: read ids
+  - Col. 3: pre-miRNA
+  - Col. 4: 1-based leftmost mapping positon of the reads
+  - Col. 6: CIGAR string, reprenting match, insertiong, deletion, et al. in an alignment.
+  - Col. 10: sequence of the read
+  - Optonal columns: `RN` means amonut of the read in raw sequencing FASTQ file; `ID` repesents identity/similarity of the local alignment between read and reference.
+
+#### isoform_bam
+The compressed binary veriosn of SAM (BAM) of `isoform.sam`.
+
+#### hit.sam
+SAM format file of reads located on pre-miRNA.
+The mapping was implemented with Smith–Waterman algorithm.
+
+#### hit_bam
+The compressed binary veriosn of SAM (BAM) file of `hit.sam`.
+
+#### mirna.sam and mirna.bam
+SAM/BAM files of canonical miRNA.
 
 `inputs.json` is the input file for [cromtool](https://github.com/broadinstitute/cromwell)
 
@@ -98,7 +132,6 @@ The algorithm was borrowed from QuagmiR <https://github.com/Gu-Lab-RBL-NCI/Quagm
   "isomir.min_identity": 0.9,
   "isomir.split_line_num": "1000"
 }
-
 ```
 
 * `max_edit_dist_5p` is the maximum distance between 5' part of reads with reference miRNA.
@@ -143,6 +176,7 @@ independently to capture the asymmetrical sequence heterogeneity.
 ### Visualize 
 The output of IsomiRs are stored as SAM/BAM format, which can be interactively visuallized by genomics viewer tools, such as [The Integrative Genomics Viewer (IGV)](https://software.broadinstitute.org/software/igv/)
 
+![](img/igv.png)
 
 ## Installation
 
