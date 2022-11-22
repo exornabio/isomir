@@ -3,7 +3,7 @@
 IsomiRs are isoforms of the same canonical mature miRNA with alternative length and/or sequence variants. 
 Growing body of evidence suggested that some isomiRs appear biologically relevant.
 
-This pipeline is designed to organize functions for detecing isomiRs from microRNA RNASeq data with a Workflow Description Language (WDL) ([version 1.0](https://github.com/openwdl/wdl/blob/main/versions/1.0/SPEC.md#workflow-description-language)).
+This pipeline is designed to organize functions for detecing isomiRs from miRseq data with a Workflow Description Language (WDL) ([version 1.0](https://github.com/openwdl/wdl/blob/main/versions/1.0/SPEC.md#workflow-description-language)).
 
 ![](img/isomir.png)
 
@@ -13,7 +13,7 @@ The algorithm was borrowed from QuagmiR <https://github.com/Gu-Lab-RBL-NCI/Quagm
 * The workflow was controlled by **WDL**.
 * The input reads can be splitted and **parallelly processed** in WDL.
 * Add some helper functions, including **visualization**.
-* Beside the algorithm from QuagmiR, we align the shore reads to pre-miRNA directly with Smith–Waterman algorithm.
+* Beside the algorithm from QuagmiR, we align the shore reads to pri-miRNA from MirGeneDB (www.mirgenedb.org) directly with Smith–Waterman algorithm.
 
 ## Code structure
 
