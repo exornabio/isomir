@@ -3,7 +3,7 @@
 IsomiRs are isoforms of the same canonical mature miRNA with alternative length and/or sequence variants. 
 Growing body of evidence suggested that some isomiRs appear biologically relevant.
 
-This pipeline is designed to organize functions for detecing isomiRs from miRseq data with a Workflow Description Language (WDL) ([version 1.0](https://github.com/openwdl/wdl/blob/main/versions/1.0/SPEC.md#workflow-description-language)).
+This pipeline is designed to organize functions for detecting isomiRs from miRseq data with a Workflow Description Language (WDL) ([version 1.0](https://github.com/openwdl/wdl/blob/main/versions/1.0/SPEC.md#workflow-description-language)).
 
 ![](img/isomir.png)
 
