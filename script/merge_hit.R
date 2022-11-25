@@ -1,17 +1,26 @@
-library(tidyverse)
-library(Biostrings)
+suppressMessages(library(tidyverse))
+suppressMessages(library(Biostrings))
 
 args <- commandArgs(TRUE)
 
 pre_file <- args[1]
 hit_files <- args[2]
-out_file <- args[3]
+read_file <- args[3]
+out_file <- args[4]
 
 hit_files <- str_split(hit_files, ",")[[1]]
 
 # read_id   pre_id    start   cigar   seq   read_num    identity
-hits <- map_dfr(hit_files, read_tsv) %>%
+hits <- map_dfr(hit_files, read_tsv, show_col_types = FALSE) %>%
     arrange(pre_id, desc(read_num))
+
+reads <- read_tsv(read_file, col_names = FALSE, show_col_types = FALSE)
+names(reads) <- c("id", "num", "seq")
+total_read_size <- sum(nchar(reads$seq) * reads$num) / 1000000
+
+hits <- mutate(hits,
+    tpm = read_num / (nchar(seq) / 1000) / total_read_size)
+
 
 pres <- readDNAStringSet(pre_file, format = "fasta")
 pre_lens <- width(pres)
@@ -36,6 +45,7 @@ sam <- tibble(
     SEQ = hits$seq,
     QUAL = "*",
     READ_NUM = str_c("RN:i:", hits$read_num),
+    TPM = str_c("TM:f:", round(hits$tpm, 2)),
     ID = str_c("ID:i:", round(hits$identity, 3))
 )
 

@@ -89,6 +89,7 @@ workflow isomir {
             mibase_file = mibase_file,
             pre_file = pre_file,
             split_isoform_files = find_isoforms.split_isoform_file_,
+            read_file = mark_duplicates.read_file_,
             out_dir = mk_dir.out_dir_
     }
 
@@ -97,6 +98,7 @@ workflow isomir {
             script_dir = script_dir,
             pre_file = pre_file,
             split_hit_files = align_pre.split_hit_file_,
+            read_file = mark_duplicates.read_file_,
             out_dir = mk_dir.out_dir_
     }
 
@@ -313,6 +315,7 @@ task merge_hit {
         String script_dir
         String pre_file
         Array[String] split_hit_files
+        String read_file
         String out_dir
     }
 
@@ -320,7 +323,8 @@ task merge_hit {
     String hit_bam_file = out_dir + "/hit.bam"
 
     command <<<
-        Rscript ~{script_dir}/merge_hit.R ~{pre_file} ~{sep="," split_hit_files} ~{hit_file}
+        Rscript ~{script_dir}/merge_hit.R ~{pre_file} ~{sep="," split_hit_files} \
+        ~{read_file} ~{hit_file}
         samtools view ~{hit_file} -b | samtools sort - -o ~{hit_bam_file}
         samtools index ~{hit_bam_file}
     >>>
@@ -336,6 +340,7 @@ task merge_isoform {
         String mibase_file
         String pre_file
         Array[String] split_isoform_files
+        String read_file
         String out_dir
     }
 
@@ -344,7 +349,9 @@ task merge_isoform {
 
     command <<<
         Rscript ~{script_dir}/merge_isoform.R ~{script_dir} ~{mibase_file} \
-                ~{pre_file} ~{sep="," split_isoform_files} ~{isoform_file}
+                ~{pre_file} ~{sep="," split_isoform_files} ~{read_file} \
+                ~{isoform_file}
+
         samtools view ~{isoform_file} -b | samtools sort - -o ~{isoform_bam_file}
         samtools index ~{isoform_bam_file}
     >>>

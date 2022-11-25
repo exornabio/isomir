@@ -1,5 +1,5 @@
-library(tidyverse)
-library(Biostrings)
+suppressMessages(library(tidyverse))
+suppressMessages(library(Biostrings))
 
 args <- commandArgs(TRUE)
 
@@ -7,16 +7,17 @@ script_dir <- args[1]
 mibase_file <- args[2]
 pre_file <- args[3]
 isoform_files <- args[4]
-out_file <- args[5]
+read_file <- args[5]
+out_file <- args[6]
 
 source(file.path(script_dir, "util.R"))
 
 # pre_id	pre_seq	mirna_id	mirna_seq	start	end
-mibase <- read_tsv(mibase_file)
+mibase <- read_tsv(mibase_file, show_col_types = FALSE)
 
 isoform_files <- str_split(isoform_files, ",")[[1]]
 # mirna_id  read_id  read_seq    read_num    dist
-isoforms <- map_dfr(isoform_files, read_tsv) %>%
+isoforms <- map_dfr(isoform_files, read_tsv, show_col_types = FALSE) %>%
     left_join(mibase, by = "mirna_id") %>%
     arrange(pre_id, desc(read_num))
 
@@ -63,6 +64,15 @@ for (i in seq(query_num)) {
     identities[i] <- score(aln) / width(subject)
 }
 
+
+reads <- read_tsv(read_file, col_names = FALSE, show_col_types = FALSE)
+names(reads) <- c("id", "num", "seq")
+total_read_size <- sum(nchar(reads$seq) * reads$num) / 1000000
+
+isoforms <- mutate(isoforms,
+    tpm = read_num / (nchar(read_seq) / 1000) / total_read_size)
+
+
 sam <- tibble(
     QNAME = str_c("read", isoforms$read_id),
     FLAG = 0,
@@ -76,6 +86,7 @@ sam <- tibble(
     SEQ = isoforms$read_seq,
     QUAL = "*",
     READ_NUM = str_c("RN:i:", isoforms$read_num),
+    TPM = str_c("TM:f:", round(isoforms$tpm, 2)),
     DIST = str_c("DT:i:", isoforms$dist)
 )
 
