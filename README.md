@@ -13,7 +13,10 @@ The algorithm was borrowed from QuagmiR <https://github.com/Gu-Lab-RBL-NCI/Quagm
 * The workflow was controlled by **WDL**.
 * The input reads can be splitted and **parallelly processed** in WDL.
 * Add some helper functions, including **visualization**.
-* Beside the algorithm from QuagmiR, we align the short reads to pri-miRNA from MirGeneDB (www.mirgenedb.org) directly with Smith–Waterman algorithm.
+* Beside the algorithm from QuagmiR, we align the short reads to pri-miRNA from  miRBase (Release 22.1) directly with Smith–Waterman algorithm.
+
+Particularly, this pipeline could be adapted to analyze the kinetics of chimeric miRNA-siRNA, for example the miHTT design in pre-miR-451 backbone (Cells. 2022; 11(17): 2748), and the siHTT design in pre-miR-155 backbone (Brain. 2021; 144(11): 3421–3435). 
+
 
 ## Code structure
 
