@@ -57,8 +57,14 @@ for (i in seq(query_num)) {
     offsets[i] <- q_start - s_start
     pad_head <- ifelse(q_start > 1, q_start - 1, 0)
     pad_tail <- ifelse(width(query) > q_end, width(query) - q_end, 0)
-    str1 <- str_c(str_dup("X", pad_head), aln_query, str_dup("X", pad_tail))
-    str2 <- str_c(str_dup("Y", pad_head), aln_subject, str_dup("Y", pad_tail))
+    str1 <- str_c(
+        str_dup("X", pad_head), as.character(aln_query),
+        str_dup("X", pad_tail)
+    )
+    str2 <- str_c(
+        str_dup("Y", pad_head), as.character(aln_subject),
+        str_dup("Y", pad_tail)
+    )
     cigars[i] <- get_cigar(str1, str2)
     query_indexes[i] <- i
     identities[i] <- score(aln) / width(subject)
@@ -70,8 +76,8 @@ names(reads) <- c("id", "num", "seq")
 total_read_size <- sum(nchar(reads$seq) * reads$num) / 1000000
 
 isoforms <- mutate(isoforms,
-    tpm = read_num / (nchar(read_seq) / 1000) / total_read_size)
-
+    tpm = read_num / (nchar(read_seq) / 1000) / total_read_size
+)
 
 sam <- tibble(
     QNAME = str_c("read", isoforms$read_id),
