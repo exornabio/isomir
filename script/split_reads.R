@@ -1,4 +1,4 @@
-library(tidyverse)
+suppressMessages(library(tidyverse))
 
 args <- commandArgs(TRUE)
 read_file <- args[1]
