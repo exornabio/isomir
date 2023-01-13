@@ -23,7 +23,7 @@ align <- function(read) {
   read_id <- read[[1]]
   read_num <- read[[2]]
   seq <- read[[3]]
-  seq  <- DNAStringSet(seq)
+  seq <- DNAStringSet(seq)
   alns <- pairwiseAlignment(
     pattern = pres,
     subject = seq,
@@ -51,8 +51,14 @@ align <- function(read) {
 
     pad_head <- ifelse(s_start > 1, s_start - 1, 0)
     pad_tail <- ifelse(width(seq) > s_end, width(seq) - s_end, 0)
-    str1 <- str_c(str_dup("X", pad_head), aln_subject, str_dup("X", pad_tail))
-    str2 <- str_c(str_dup("Y", pad_head), aln_query, str_dup("Y", pad_tail))
+    str1 <- str_c(
+      str_dup("X", pad_head), as.character(aln_subject),
+      str_dup("X", pad_tail)
+    )
+    str2 <- str_c(
+      str_dup("Y", pad_head), as.character(aln_query),
+      str_dup("Y", pad_tail)
+    )
     cigar <- get_cigar(str1, str2)
     start <- q_start - pad_head
     aln_list[[i]] <- tibble(
@@ -68,7 +74,6 @@ align <- function(read) {
 
   aln_list
 }
-
 
 out_list <- vector("list", nrow(reads))
 
