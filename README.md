@@ -5,8 +5,6 @@ Growing body of evidence suggested that some isomiRs appear biologically relevan
 
 This pipeline is designed to organize functions for detecting isomiRs from miRseq data with a Workflow Description Language (WDL) ([version 1.0](https://github.com/openwdl/wdl/blob/main/versions/1.0/SPEC.md#workflow-description-language)).
 
-![](img/isomir.png)
-
 The algorithm was borrowed from QuagmiR <https://github.com/Gu-Lab-RBL-NCI/QuagmiR> with some changes:
 
 * We implement the algorithm with **C++**, which make it run faster.
