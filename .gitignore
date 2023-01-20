@@ -5,6 +5,7 @@ src/*.o
 src/isomir
 wdl/cromwell-executions
 wdl/cromwell-workflow-logs
-data/*
+data
+result
 
 
