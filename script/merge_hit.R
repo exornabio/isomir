@@ -11,7 +11,7 @@ out_file <- args[4]
 hit_files <- str_split(hit_files, ",")[[1]]
 
 # read_id   pre_id    start   cigar   seq   read_num    identity
-hits <- map_dfr(hit_files, read_tsv, show_col_types = FALSE) %>%
+hits <- map_dfr(hit_files, read_tsv, col_types = "cciccid") %>%
     arrange(pre_id, desc(read_num))
 
 reads <- read_tsv(read_file, col_names = FALSE, show_col_types = FALSE)

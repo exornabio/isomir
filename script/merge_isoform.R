@@ -17,7 +17,8 @@ mibase <- read_tsv(mibase_file, show_col_types = FALSE)
 
 isoform_files <- str_split(isoform_files, ",")[[1]]
 # mirna_id  read_id  read_seq    read_num    dist
-isoforms <- map_dfr(isoform_files, read_tsv, show_col_types = FALSE) %>%
+isoforms <- map_dfr(isoform_files, read_tsv,
+    col_types = "cccii") %>%
     left_join(mibase, by = "mirna_id") %>%
     arrange(pre_id, desc(read_num))
 
