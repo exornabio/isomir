@@ -12,30 +12,32 @@ source(file.path(script_dir, "util.R"))
 
 pres <- readDNAStringSet(pre_file, format = "fasta")
 reads <- read_tsv(read_file, col_names = FALSE, show_col_types = FALSE)
+read_ids <- reads[[1]]
+read_nums <- reads[[2]]
+seqs <- DNAStringSet(reads[[3]])
 
 sub_mat <- nucleotideSubstitutionMatrix(
   match = 1,
   mismatch = 0
 )
 
-align <- function(read) {
-  read_id <- read[[1]]
-  read_num <- read[[2]]
-  seq <- read[[3]]
-  seq <- DNAStringSet(seq)
+align <- function(pre) {
+  # pre_id <- names(pre)
+  # pre <- DNAString(as.character(pre))
   alns <- pairwiseAlignment(
-    pattern = pres,
-    subject = seq,
+    pattern = seqs,
+    subject = pre,
     substitutionMatrix = sub_mat,
     gapOpening = 0,
     gapExtension = 1,
     type = "overlap"
   )
-  scores <- score(alns)
-  max_indexes <- which(scores == max(scores))
-  alns <- alns[max_indexes]
-  pre_ids <- names(pres[max_indexes])
-  identities <- scores[max_indexes] / width(seq)
+  identities <- score(alns) / width(seqs)
+  hit_indexes <- identities >= min_identity
+  alns <- alns[hit_indexes]
+  aln_read_ids <- read_ids[hit_indexes]
+  aln_read_nums <- read_nums[hit_indexes]
+  aln_seqs <- seqs[hit_indexes]
 
   aln_list <- vector("list", length(alns))
 
@@ -46,45 +48,42 @@ align <- function(read) {
     q_start <- start(aln_query)
     q_end <- end(aln_query)
     s_start <- start(aln_subject)
-    s_end <- end(aln_subject)
 
-    pad_head <- ifelse(s_start > 1, s_start - 1, 0)
-    pad_tail <- ifelse(width(seq) > s_end, width(seq) - s_end, 0)
+    pad_head <- ifelse(q_start > 1, q_start - 1, 0)
+    pad_tail <- ifelse(width(aln_seqs[i]) > q_end, width(aln_seqs[i]) - q_end,
+      0)
     str1 <- str_c(
-      str_dup("X", pad_head), as.character(aln_subject),
+      str_dup("X", pad_head), as.character(aln_query),
       str_dup("X", pad_tail)
     )
     str2 <- str_c(
-      str_dup("Y", pad_head), as.character(aln_query),
+      str_dup("Y", pad_head), as.character(aln_subject),
       str_dup("Y", pad_tail)
     )
     cigar <- get_cigar(str1, str2)
-    start <- q_start - pad_head
+    start <- s_start - pad_head
     aln_list[[i]] <- tibble(
-      read_id = read_id,
-      pre_id = pre_ids[i],
+      read_id = aln_read_ids[i],
+      pre_id = names(pre),
       start = start,
       cigar = cigar,
-      seq = as.character(seq),
-      read_num = read_num,
-      identity = identities[i]
+      seq = as.character(aln_seqs[i]),
+      read_num = aln_read_nums[i],
+      identity = identities[hit_indexes][i]
     )
   }
 
   aln_list
 }
 
-out_list <- vector("list", nrow(reads))
+out_list <- vector("list", length(pres))
 
-for (i in seq(nrow(reads))) {
-  read <- reads[i, ]
-  out_list[[i]] <- align(read)
+for (i in seq_len(length(pres))) {
+  pre <- pres[i] 
+  print(pre)
+  out_list[[i]] <- align(pre)
 }
 
 tib <- bind_rows(out_list)
-
-# tib <- map2_dfr(seqs, read_nums, align)
-
-tib <- filter(tib, identity >= min_identity)
 
 write_tsv(tib, file = output_file)
