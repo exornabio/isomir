@@ -1,6 +1,6 @@
 # IsoMir: A Pipeline for Detection of isomiRs
 
-IsomiRs are isoforms of the same canonical mature miRNA with alternative length and/or sequence variants. 
+IsomiRs are isoforms of the same canonical mature miRNA with alternative length and/or sequence variants.
 Growing body of evidence suggested that some isomiRs appear biologically relevant.
 
 This pipeline is designed to organize functions for detecting isomiRs from miRseq data with a Workflow Description Language (WDL) ([version 1.0](https://github.com/openwdl/wdl/blob/main/versions/1.0/SPEC.md#workflow-description-language)).
@@ -11,7 +11,7 @@ The algorithm was borrowed from QuagmiR <https://github.com/Gu-Lab-RBL-NCI/Quagm
 * The workflow was controlled by **WDL**.
 * The input reads can be splitted and **parallelly processed** in WDL.
 * Add some helper functions, including **visualization**.
-* Beside the algorithm from QuagmiR, we align the short reads to pri-miRNA from  miRBase (Release 22.1) directly with Smith–Waterman algorithm.
+* (Optional) Beside the algorithm from QuagmiR, we align the short reads to pri-miRNA from  miRBase (Release 22.1) directly with Smith–Waterman algorithm.
 
 Particularly, this pipeline could be adapted to analyze the kinetics of chimeric miRNA-siRNA, for example the miHTT design in pre-miR-451 backbone (Cells. 2022; 11(17): 2748), and the siHTT design in pre-miR-155 backbone (Brain. 2021; 144(11): 3421–3435). 
 
@@ -19,26 +19,21 @@ Particularly, this pipeline could be adapted to analyze the kinetics of chimeric
 ## Code structure
 
 ```
+.
 ├── data
-│   └── sample1
-│       ├── hit
-│       ├── hit.bam
-│       ├── hit.bam.bai
-│       ├── hit.sam
-│       ├── isoform
-│       ├── isoform.bam
-│       ├── isoform.bam.bai
-│       ├── isoform.sam
-│       ├── mirna.bam
-│       ├── mirna.bam.bai
-│       ├── pre.fa
-│       ├── pre.fa.fai
-│       ├── read
-│       └── read.tsv
+│   ├── hsa_mibase.tsv
+│   ├── hsa_mirna.sam
+│   ├── hsa_mirna.tsv
+│   ├── hsa_pre.fa
+│   ├── mibase22.1.tsv
+│   └── sample1.fastq
+├── img
+│   ├── igv.png
+│   └── workflow.png
+├── LICENSE
 ├── README.md
 ├── script
 │   ├── align_pre.R
-│   ├── check_package.R
 │   ├── isomir
 │   ├── merge_hit.R
 │   ├── merge_isoform.R
@@ -50,26 +45,21 @@ Particularly, this pipeline could be adapted to analyze the kinetics of chimeric
 │   ├── code.h
 │   ├── config.cpp
 │   ├── config.h
+│   ├── config.o
 │   ├── detection.cpp
 │   ├── detection.h
+│   ├── detection.o
 │   ├── isoform.h
+│   ├── isomir
 │   ├── levenshtein.cpp
 │   ├── levenshtein.h
+│   ├── levenshtein.o
 │   ├── main.cpp
+│   ├── main.o
 │   ├── Makefile
 │   └── mirna.h
-├── test
-│   ├── hsa_mibase.tsv
-│   ├── hsa_mirna.sam
-│   ├── hsa_mirna.tsv
-│   ├── hsa_pre.fa
-│   ├── mibase22.1.tsv
-│   └── sample1.fastq
 └── wdl
-    ├── cromwell-executions
-    │   └── isomir
-    ├── cromwell-workflow-logs
-    ├── inputs.json
+    ├── input.json
     └── main.wdl
 ```
 
@@ -78,11 +68,11 @@ Particularly, this pipeline could be adapted to analyze the kinetics of chimeric
 ### src: C++ source code implemented to find isomiRs
 
 ### wdl
-  - inputs.json
+  - input.json
   - main.wdl
 
 ### data  
-The example analysis directory.
+The example data directory.
   
 #### isoform.sam
 Sequence Alignment Map (SAM) format file of reads located on pre-miRNA.
@@ -117,21 +107,22 @@ The compressed binary veriosn of SAM (BAM) file of `hit.sam`.
 #### mirna.sam and mirna.bam
 SAM/BAM files of canonical miRNA.
 
-`inputs.json` is the input file for [cromtool](https://github.com/broadinstitute/cromwell)
+`input.json` is the input file for [cromtool](https://github.com/broadinstitute/cromwell)
 
 ```json
 {
   "isomir.script_dir": "/home/bc/isomir/script",
-  "isomir.analysis_dir": "/home/bc/isomir/data",
-  "isomir.mibase_file": "/home/bc/isomir/test/hsa_mibase.tsv",
-  "isomir.fq_file": "/home/bc/isomir/test/sample1.fastq",
-  "isomir.mirna_file": "/home/bc/isomir/test/hsa_mirna.tsv",
-  "isomir.pre_file": "/home/bc/isomir/test/hsa_pre.fa",
-  "isomir.mirna_sam_file": "/home/bc/isomir/test/hsa_mirna.sam",
-  "isomir.max_edit_dist_5p": "2",
-  "isomir.max_edit_dist_3p": "3",
+  "isomir.result_dir": "/home/bc/isomir/result",
+  "isomir.mibase_file": "/home/bc/isomir/data/hsa_mibase.tsv",
+  "isomir.fq_file": "/home/bc/isomir/data/sample1.fastq",
+  "isomir.mirna_file": "/home/bc/isomir/data/hsa_mirna.tsv",
+  "isomir.pre_file": "/home/bc/isomir/data/hsa_pre.fa",
+  "isomir.mirna_sam_file": "/home/bc/isomir/data/hsa_mirna.sam",
+  "isomir.max_edit_dist_5p": 2,
+  "isomir.max_edit_dist_3p": 3,
   "isomir.min_identity": 0.9,
-  "isomir.split_line_num": "1000"
+  "isomir.split_num": 10,
+  "isomir.is_pre": false
 }
 ```
 
@@ -141,17 +132,16 @@ SAM/BAM files of canonical miRNA.
 ## Preprocess
 
 ### miRNA.xls
-Downlaod `miRNA.xls` from miRBase (Release 22.1) <https://mirbase.org/ftp/CURRENT/miRNA.xls.gz>.
-Using Microsoft Excel or OpenOffice Calc, tranfer `miRNA.xls` to TSV file `mirna_mibase22.1.tsv`
+Downlaod `miRNA.xls` from miRBase (Release 22.1) <https://mirbase.org/ftp/
 
 ### Identify unique motif for each miRNA
 Each miRNA sequence is divided into three regions: 5' part, 3' part and a central region. 
-The central region is referred to as the ‘motif’. 
+The central region is referred to as the 'motif'. 
 Reads matching a certain motif were considered as potential isomiRs for the corresponding miRNA.
 
 ```bash
 cd isomir
-Rscript script/process_mibase.R test/mibase22.1.tsv hsa 13 test
+Rscript script/process_mibase.R data/mibase22.1.tsv hsa 13 data
 ```
 
 ## Workflow
@@ -237,9 +227,9 @@ The compiled binary is called `isomir`
 
 
 ## Usage
-Set paramaters in `inputs.json` then run
+Set paramaters in `input.json` then run
 
 ```
 cd isomir/wdl
-java -jar /opt/cromwell.jar run main.wdl -i inputs.json
+java -jar /opt/cromwell.jar run main.wdl -i input.json
 ```
