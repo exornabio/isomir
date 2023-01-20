@@ -15,8 +15,7 @@ reads <- read_tsv(read_file, col_names = FALSE, show_col_types = FALSE)
 
 sub_mat <- nucleotideSubstitutionMatrix(
   match = 1,
-  mismatch = 0,
-  baseOnly = TRUE
+  mismatch = 0
 )
 
 align <- function(read) {

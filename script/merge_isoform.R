@@ -32,8 +32,7 @@ offsets <- vector("integer", query_num)
 
 sub_mat <- nucleotideSubstitutionMatrix(
     match = 1,
-    mismatch = 0,
-    baseOnly = TRUE
+    mismatch = 0
 )
 
 for (i in seq(query_num)) {
