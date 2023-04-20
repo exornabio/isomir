@@ -1,12 +1,16 @@
-suppressMessages(library(Biostrings))
-suppressMessages(library(tidyverse))
+.libPaths(c("/usr/local/lib/R/site-library"))
 
-args <- commandArgs(TRUE)
-script_dir <- args[1]
-read_file <- args[2]
-pre_file <- args[3]
-min_identity <- as.numeric(args[4])
-output_file <- args[5]
+suppressMessages(library(Biostrings))
+suppressMessages(library(readr))
+suppressMessages(library(stringr))
+suppressMessages(library(dplyr))
+
+script_dir <- "script"
+
+read_file <- snakemake@input[[1]]
+pre_file <- snakemake@input[[2]]
+output_file <- snakemake@output[[1]]
+min_identity <- as.numeric(snakemake@config[["min_identity"]])
 
 source(file.path(script_dir, "util.R"))
 
@@ -79,8 +83,7 @@ align <- function(pre) {
 out_list <- vector("list", length(pres))
 
 for (i in seq_len(length(pres))) {
-  pre <- pres[i] 
-  print(pre)
+  pre <- pres[i]
   out_list[[i]] <- align(pre)
 }
 

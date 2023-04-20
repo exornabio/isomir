@@ -1,24 +1,26 @@
-suppressMessages(library(tidyverse))
+.libPaths(c("/usr/local/lib/R/site-library"))
+
+suppressMessages(library(readr))
+suppressMessages(library(dplyr))
+suppressMessages(library(purrr))
+suppressMessages(library(stringr))
 suppressMessages(library(Biostrings))
 
-args <- commandArgs(TRUE)
+script_dir <- "script"
 
-script_dir <- args[1]
-mibase_file <- args[2]
-pre_file <- args[3]
-isoform_files <- args[4]
-read_file <- args[5]
-out_file <- args[6]
+isoform_file <- snakemake@input[[1]]
+read_file <- snakemake@input[[2]]
+mibase_file <- snakemake@input[[3]]
+pre_file <- snakemake@input[[4]]
+sam_file <- snakemake@output[[1]]
 
 source(file.path(script_dir, "util.R"))
 
 # pre_id	pre_seq	mirna_id	mirna_seq	start	end
 mibase <- read_tsv(mibase_file, show_col_types = FALSE)
 
-isoform_files <- str_split(isoform_files, ",")[[1]]
 # mirna_id  read_id  read_seq    read_num    dist
-isoforms <- map_dfr(isoform_files, read_tsv,
-    col_types = "cccii") %>%
+isoforms <- read_tsv(isoform_file, col_types = "cccii") %>%
     left_join(mibase, by = "mirna_id") %>%
     arrange(pre_id, desc(read_num))
 
@@ -101,9 +103,9 @@ pre_lens <- width(pres)
 pre_ids <- names(pres)
 sq <- map2_chr(pre_ids, pre_lens, ~ str_c("@SQ\tSN:", .x, "\tLN:", .y))
 
-fout <- file(out_file, "w")
+fout <- file(sam_file, "w")
 writeLines("@HD\tVN:1.6\tSO:coordinate", fout)
 writeLines(sq, fout)
 close(fout)
 
-write_tsv(sam, file = out_file, col_names = FALSE, append = TRUE)
+write_tsv(sam, file = sam_file, col_names = FALSE, append = TRUE)

@@ -1,4 +1,4 @@
-library(stringr)
+suppressMessages(library(stringr))
 
 get_cigar <- function(query, ref) {
   query <- str_split(query, "")[[1]]

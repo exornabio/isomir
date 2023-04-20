@@ -1,0 +1,7 @@
+samples: config/s1978r10009.ids
+spe: mmu
+mibase: s1978r10009_mibase.tsv
+kmer_len: 13
+max_edit_dist_5p: 2
+max_edit_dist_3p: 3
+min_identity: 0.9

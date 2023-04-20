@@ -1,5 +1,11 @@
 suppressMessages(library(tidyverse))
 suppressMessages(library(Biostrings))
+suppressMessages(library(yaml))
+
+config <- read_yaml("config/config.yaml")
+spe <- config$spe
+mibase_file <- file.path("data/mibase", config$mibase)
+kmer_len <- as.integer(config$kmer_len)
 
 #' get all sub strings of a seq of certain length
 #' @param seq
@@ -19,24 +25,20 @@ get_kmers <- function(seq, seq_id, kmer_len = 13) {
   kmers
 }
 
-args <- commandArgs(TRUE)
-mibase_file <- args[1]
-species <- args[2] # species (e.g. hsa)
-kmer_len <- as.integer(args[3])
-out_dir <- args[4]
 
-if (!dir.exists(out_dir)) {
-  suppressWarnings(dir.create(out_dir))
+resource_dir <- "data/resource"
+if (!dir.exists(resource_dir)) {
+  suppressWarnings(dir.create(resource_dir))
 }
 
-out_mibase_file <- file.path(out_dir, str_c(species, "_mibase.tsv"))
-out_mirna_file <- file.path(out_dir, str_c(species, "_mirna.tsv"))
-out_pre_file <- file.path(out_dir, str_c(species, "_pre.fa"))
-out_sam_file <- file.path(out_dir, str_c(species, "_mirna.sam"))
+out_mibase_file <- file.path(resource_dir, str_c(spe, "_mibase.tsv"))
+out_mirna_file <- file.path(resource_dir, str_c(spe, "_mirna.tsv"))
+out_pre_file <- file.path(resource_dir, str_c(spe, "_pre.fasta"))
+out_sam_file <- file.path(resource_dir, str_c(spe, "_mirna.sam"))
 
 mibase <- read_tsv(mibase_file, show_col_types = FALSE)
 mibase <- select(mibase, Accession:Mature2_Seq)
-mibase <- filter(mibase, str_detect(ID, str_c("^", species)))
+mibase <- filter(mibase, str_detect(ID, str_c("^", spe)))
 
 mibase_5p <- select(mibase,
   pre_id = ID, pre_seq = Sequence,
