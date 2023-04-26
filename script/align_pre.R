@@ -1,4 +1,4 @@
-.libPaths(c("/usr/local/lib/R/site-library"))
+# .libPaths(c("/usr/local/lib/R/site-library"))
 
 suppressMessages(library(Biostrings))
 suppressMessages(library(readr))

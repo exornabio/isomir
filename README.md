@@ -16,24 +16,22 @@ Particularly, this pipeline could be adapted to analyze the kinetics of chimeric
 
 ## Installation
 ### Prerequisites
-* [R 4.2.2](https://mirrors.tuna.tsinghua.edu.cn/CRAN/)
+* [R 4.3.0](https://mirrors.tuna.tsinghua.edu.cn/CRAN/)
   + tidyverse
   + yaml
-* [Bioconductor 3.16](https://www.bioconductor.org/install/)
+* [Bioconductor 3.17](https://www.bioconductor.org/install/)
   + Biostrings
-* samtools
-```sh
-wget https://github.com/samtools/samtools/releases/download/1.16.1/samtools-1.16.1.tar.bz2
-tar xjvf samtools-1.16.1.tar.bz2
-cd samtools-1.16.1
-./configure
-make
-make install
-```
+* Conda environment
 
-* Python 3.10
-  + pandas
-  + snakemake
+```sh
+# Install miniconda
+curl -L https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Linux-x86_64.sh -o Mambaforge-Linux-x86_64.sh
+bash Mambaforge-Linux-x86_64.sh
+conda config --set auto_activate_base false
+
+# Create a conda environment named `isomir`
+mamba env create --name isomir --file env.yaml
+```
 
 ### Download and compile
 ```sh
