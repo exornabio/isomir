@@ -1,28 +1,24 @@
 import os
-import pandas as pd
 
-configfile: "config/config.yaml"
-
-os.system("Rscript script/process_mibase.R")
-
+configfile: "data/config/config.yaml"
 
 def start_on():
     data_dir = "data"
-    resource_dir = os.path.join(data_dir, "resource")
-    read_dir = os.path.join(data_dir, "read")
-    result_dir = os.path.join(data_dir, "result")
-    if not os.path.exists(resource_dir):
-        os.mkdir(resource_dir)
+    temp_dir = os.path.join(data_dir,"temp")
+    if not os.path.exists(temp_dir):
+        os.mkdir(temp_dir)
+
+    result_dir = os.path.join(data_dir,"result")
     if not os.path.exists(result_dir):
         os.mkdir(result_dir)
-  
+
 
 def get_samples():
     samples = set()
-    with open(config["samples"], "rt") as fin:
+    with open(os.path.join("data/config",config["samples"]),"rt") as fin:
         for line in fin:
             line = line.strip()
-            if (not line.startswith("#")) and len(line) != 0:
+            if not line.startswith("#") and len(line) != 0:
                 samples.add(line)
     return samples
 
@@ -31,12 +27,37 @@ start_on()
 samples = get_samples()
 
 
+onsuccess:
+    shell("chmod -R 777 data")
+
+
 rule all:
     input:
-        expand("data/result/{sample}_isoform.sam", sample=samples),
-        expand("data/result/{sample}_hit.sam", sample=samples),
+        expand("data/result/{sample}_isoform.bam",sample=samples),
         "data/result/mirna.bam",
         "data/result/pre.fasta"
+
+
+rule format_mibase:
+    input:
+        "data/resource/miRNA.dat"
+    output:
+        "data/resource/mibase.tsv"
+    script:
+        "script/format_mibase.py"
+
+
+rule ex_mibase:
+    input:
+        "data/resource/mibase.tsv",
+        "data/resource/custom_mibase.tsv",
+    output:
+        f"data/resource/{config['spe']}_mibase.tsv",
+        f"data/resource/{config['spe']}_mirna.tsv",
+        f"data/resource/{config['spe']}_pre.fasta",
+        f"data/resource/{config['spe']}_mirna.sam"
+    script:
+        "script/ex_mibase.R"
 
 
 rule index_mirna:
@@ -55,20 +76,22 @@ rule index_mirna:
 
 rule trim_reads:
     input:
-        "data/fastq/{sample}.fastq"
+        "data/fastq/{sample}.fastq.gz"
     output:
-        "data/trim/{sample}.fastq",
-        "data/trim/{sample}_fastp.html",
-        "data/trim/{sample}_fastp.json"
+        "data/temp/{sample}.fastq",
+        "data/temp/{sample}_fastp.html",
+        "data/temp/{sample}_fastp.json"
+    threads:
+        config["fastp"]["thread"]
     shell:
-        "fastp -i {input[0]} -o {output[0]} -h {output[1]} -j {output[2]}"
+        "fastp -i {input[0]} -o {output[0]} -h {output[1]} -j {output[2]} -w {threads}"
 
 
 rule mark_duplicates:
-    input: 
-        "data/trim/{sample}.fastq"
+    input:
+        'data/temp/{sample}.fastq'
     output:
-        "data/read/{sample}_reads.tsv"
+        "data/temp/{sample}_reads.tsv"
     shell:
         "awk \"NR%4==2\" {input} |sort |uniq -c |nl -s' ' |sed 's/^ \+//g' "
         "|sed 's/ \+/\t/g' >{output}"
@@ -76,29 +99,20 @@ rule mark_duplicates:
 
 rule find_isoforms:
     input:
-        "data/read/{sample}_reads.tsv",
+        "data/temp/{sample}_reads.tsv",
         f"data/resource/{config['spe']}_mirna.tsv"
     output:
         "data/result/{sample}_isoform.tsv"
     shell:
-        "script/isomir -l {config[max_edit_dist_5p]} -r {config[max_edit_dist_3p]} "
-        "-s {input[0]} -m {input[1]} -o {output[0]}"
-
-
-rule align_pre:
-    input:
-        "data/read/{sample}_reads.tsv",
-        f"data/resource/{config['spe']}_pre.fasta"
-    output:
-        "data/result/{sample}_hit.tsv"
-    script:
-        "script/align_pre.R"
+        "core/detect.py  "
+        "-l {config[max_edit_dist_5p]} -r {config[max_edit_dist_3p]} -n {config[min_read_num]} "
+        "{input[0]} {input[1]} {output[0]}"
 
 
 rule isoform_to_sam:
     input:
         "data/result/{sample}_isoform.tsv",
-        "data/read/{sample}_reads.tsv",
+        "data/temp/{sample}_reads.tsv",
         f"data/resource/{config['spe']}_mibase.tsv",
         f"data/resource/{config['spe']}_pre.fasta"
     output:
@@ -107,14 +121,11 @@ rule isoform_to_sam:
         "script/isoform_to_sam.R"
 
 
-rule hit_to_sam:
+rule index_isoform:
     input:
-        "data/result/{sample}_hit.tsv",
-        "data/read/{sample}_reads.tsv",
-        f"data/resource/{config['spe']}_pre.fasta"
+        "data/result/{sample}_isoform.sam",
     output:
-        "data/result/{sample}_hit.sam"
-    script:
-        "script/hit_to_sam.R"
-
-   
+        "data/result/{sample}_isoform.bam",
+    shell:
+        "samtools view {input[0]} -b | samtools sort - -o {output[0]} && "
+        "samtools index {output[0]}"

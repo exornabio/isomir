@@ -1,89 +1,83 @@
 # IsoMir: A Pipeline for Detection of isomiRs
 
-IsomiRs are isoforms of the same canonical mature miRNA with alternative length and/or sequence variants.
-Growing body of evidence suggested that some isomiRs appear biologically relevant.
+IsomiRs are isoforms of the same canonical mature miRNA with alternative length and sequence variants.
+A growing body of evidence suggested that some isomiRs appear biologically relevant.
 
 This pipeline is designed to organize functions for detecting isomiRs from miRseq data with the Snakemake workflow management system.
 
 The algorithm was borrowed from QuagmiR <https://github.com/Gu-Lab-RBL-NCI/QuagmiR> with some changes:
 
-* We implement the algorithm with **C++**, which make it run faster.
 * The workflow was controlled by **Snakemake**.
 * Add some helper functions, including **visualization**.
-* Beside the algorithm from QuagmiR, we align the short reads to pre-miRNA from  miRBase directly with Smith–Waterman algorithm.
-
-Particularly, this pipeline could be adapted to analyze the kinetics of chimeric miRNA-siRNA, for example the miHTT design in pre-miR-451 backbone (Cells. 2022; 11(17): 2748), and the siHTT design in pre-miR-155 backbone (Brain. 2021; 144(11): 3421–3435). 
+* This pipeline can be used to analyze the kinetics of chimeric miRNA-siRNA.
 
 ## Installation
 ### Prerequisites
+* Ubuntu 22.04 LTS
 * [R 4.3.0](https://mirrors.tuna.tsinghua.edu.cn/CRAN/)
-  + tidyverse
-  + yaml
-* [Bioconductor 3.17](https://www.bioconductor.org/install/)
-  + Biostrings
-* Conda environment
-
-```sh
-# Install miniconda
-curl -L https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Linux-x86_64.sh -o Mambaforge-Linux-x86_64.sh
-bash Mambaforge-Linux-x86_64.sh
-conda config --set auto_activate_base false
-
-# Create a conda environment named `isomir`
-mamba env create --name isomir --file env.yaml
-```
+    + tidyverse
+* [Bioconductor 3.18](https://www.bioconductor.org/install/)
+    + Biostrings
+* Python 3.10+
+    + snakemake
+    + biopython
+    + pandas
+* [samtools](https://github.com/samtools/samtools)
+* fastp
 
 ### Download and compile
-```sh
-git clone https://github.com/exornabio/isomir.git
-# Move to c++ source code directory and compile
-cd isomir/src
-make
-# The compiled binary is called `isomir`
-```
 
 ## Workflow
 
+### Prepare miRNA dataset
+Download the miRNA file (`miRNA.dat`) from miRBase <https://mirbase.org/download/>.  
+Extract mature miRNA with the attribute, including precursor sequences and the coordinates of the reference miRNAs on the precursors for the species the user selected.
+
+### Trim adapter and control quality 
+Trim adapter and control quality of NGS reads using fastp.
+
 ### Mark duplicates in the FASTQ file
-To speed up the computation, we first extract sequences of each reads, and then mark and count duplicates. 
-The sequence with its amount are stored in a tab-separated values (TSV) file.
+To speed up the computation, we first extract sequences of each read and then mark and count duplicates. 
+The sequence and amount are stored in a tab-separated values (TSV) file.
 
-### Split reads file
-Split the reads file into multiple files, which can be scattered to parallelize the task of identifing isomiRs.
-
-### Identify reads as certein miRNA based on the motif
-Reads matching a certain motif were considered as potential isomiRs for the corresponding miRNA.
+### Identity reads as candidate miRNA based on the motif
+Reads matching a specific motif were considered as potential isomiRs for the corresponding miRNA.
 
 ### Caculate edit distance of 5′ or 3′ ends
-For the potential isomiR reads, the 5' part and 3' part (preced and follow the motif) sequences are further compared with reference miRNA respetively.
-The pairwise sequence similarity between 5' part and 3' part with the reference miRNA is calculated using the Levenshtein distances (edit distances).
+For the potential isomiR reads, the 5' part and 3' part (precede and follow the motif) sequences are further compared with reference miRNA, respectively.
+The pairwise sequence similarity between the 5' part and 3' part with the reference miRNA is calculated using the Levenshtein distances (edit distances).
 The maximum allowed edit distances for the 5' and 3' regions can be set 
 independently to capture the asymmetrical sequence heterogeneity.
 
 ### Visualize 
-The output of IsomiRs are stored as SAM/BAM format, which can be interactively visuallized by genomics viewer tools, such as [The Integrative Genomics Viewer (IGV)](https://software.broadinstitute.org/software/igv/)
+The output of IsomiRs is stored in SAM/BAM format, which can be interactively visualized by genomics viewer tools, such as [The Integrative Genomics Viewer (IGV)](https://software.broadinstitute.org/software/igv/)
 ![](img/igv.png)
 
+
 ## Usage
-Download the miRNA file (`miRNA.xls`) from miRBase <https://mirbase.org/ftp/> and transform it to TSV file (e.g. `mibase22.1.tsv`).
-Set paramaters in `config/config.yaml`:
+Set parameters in `data/config/config.yaml`:
 
 ```yaml
-samples: config/sample.txt
+samples: sample.ids
 spe: mmu
-mibase: mibase22.1.tsv
 kmer_len: 13
 max_edit_dist_5p: 2
 max_edit_dist_3p: 3
-min_identity: 0.9
+min_read_num: 100
+fastp:
+  thread: 4
 ```
 
-* `max_edit_dist_5p` is the maximum distance between 5' part of reads with reference miRNA.
-* `max_edit_dist_3p` is the maximum distance between 3' part of reads with reference miRNA.
+* `samples`: the file that contains sample names per line
+* `spe`: the species (e.g. hsa, mmu)
+* `kmer_len`: length of motif in mature miRNA
+* `max_edit_dist_5p`: the maximum distance between 5 part of reads with reference miRNA
+* `max_edit_dist_3p`: the maximum distance between 3' part of reads with reference miRNA
+* `min_read_num`: is the minimum read count for an isoform
 
 After that, run
 ```sh
-snakemake --cores 4
+snakemake --cores 4 --forceall
 ```
 
 ## Result files
@@ -93,32 +87,38 @@ The result files were stored in `data/result/`
 Sequence Alignment Map (SAM) format file of reads located on pre-miRNA.
 
 ```
-read4868	0	hsa-mir-151a	11	30	22M	*	0	0	TCGAGGAGCTCACAGTCTAGTA	*	RN:i:75	DT:i:1
-read4867	0	hsa-mir-151a	11	30	21M	*	0	0	TCGAGGAGCTCACAGTCTAGT	*	RN:i:64	DT:i:0
-read4869	0	hsa-mir-151a	11	30	23M	*	0	0	TCGAGGAGCTCACAGTCTAGTAA	*	RN:i:14	DT:i:2
+read4868    0   hsa-mir-151a    11  30  22M *   0   0   TCGAGGAGCTCACAGTCTAGTA  *   RN:i:75 DT:i:1
+read4867    0   hsa-mir-151a    11  30  21M *   0   0   TCGAGGAGCTCACAGTCTAGT   *   RN:i:64 DT:i:0
+read4869    0   hsa-mir-151a    11  30  23M *   0   0   TCGAGGAGCTCACAGTCTAGTAA *   RN:i:14 DT:i:2
 ```
 
-In the SAM format, each alignment line represents the alignment of a short reads. 
-Each line consists of 11 or more TAB-separated columns. 
-For more details see <https://samtools.github.io/hts-specs/SAMv1.pdf>. 
-Here we just list some import columns in this case.
+In the SAM format, each alignment line represents the alignment of short reads. 
+Each line consists of 11 or more TAB-separated columns; for more details, see <https://samtools.github.io/hts-specs/SAMv1.pdf>. 
+Here, we list some important columns in this case.
 
-	* Col. 1: read ids
-	* Col. 3: pre-miRNA
-	* Col. 4: 1-based leftmost mapping positon of the reads
-	* Col. 6: CIGAR string, reprenting match, insertiong, deletion, et al. in an alignment.
-	* Col. 10: sequence of the read
-	* Optonal columns: `RN` means amonut of the read in raw sequencing FASTQ file; `ID` repesents identity/similarity of the local alignment between read and reference.
+* Col. 1: read id
+* Col. 3: pre-miRNA
+* Col. 4: 1-based leftmost mapping position of the reads
+* Col. 6: CIGAR string, representing match, insertion, deletion, et al. in an alignment.
+* Col. 10: sequence of the read
+* Optional columns: `RN` means the amount of the read in raw sequencing FASTQ file; `ID` represents identity/similarity of the local alignment between read and reference.
 
 ### sample_isoform.bam
-The compressed binary veriosn of SAM (BAM) of `sample_isoform.sam`.
-
-### sample_hit.sam
-SAM format file of reads located on pre-miRNA.
-The mapping was implemented with Smith–Waterman algorithm.
-
-### sample_hit_bam
-The compressed binary veriosn of SAM (BAM) file of `sample_hit.sam`.
+The compressed binary version of SAM (BAM) of `sample_isoform.sam`.
 
 ### mirna.sam and mirna.bam
 SAM/BAM files of canonical miRNA.
+
+## Docker
+
+```sh
+docker build -t caibinperl/isomir .
+docker push caibinperl/isomir
+```
+
+```sh
+# Mac / Linux
+docker run --mount type=bind,src="$(pwd)/data",target=/isomir/data caibinperl/isomir
+# PowerShell
+docker run --mount "type=bind,src=$pwd/data,target=/isomir/data" caibinperl/isomir
+```
